@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:frontend/components/error_snackbar.dart';
+import 'package:frontend/components/topic_tile.dart';
 import 'package:frontend/constants/constants.dart';
 import 'package:frontend/utils/encrypted_storage.dart';
 import 'package:frontend/utils/topic_model.dart';
@@ -27,10 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (response.statusCode == 200) {
       var x = (jsonDecode(response.body)['data'] as List);
-      x.forEach((i) => topics.add(TopicModel.fromJson(i as Map)));
+      for (var i in x) {
+        topics.add(TopicModel.fromJson(i as Map));
+      }
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(getErrorSnackBar("Some error occured!"));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(getErrorSnackBar("Some error occured!"));
+      }
     }
     return topics;
   }
@@ -71,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       "Your Topics",
-                      style: TextStyle(fontSize: 30),
+                      style: TextStyle(fontSize: 34),
                     ),
                     const SizedBox(height: 20),
                     Expanded(
@@ -90,7 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               return Center(
                                 child: ListView.builder(
                                   itemCount: data.length,
-                                  itemBuilder: (context, index) {return Text("$index");},
+                                  itemBuilder: (context, index) {
+                                    return TopicTile(topic: data[index]);
+                                  },
                                 ),
                               );
                             }
@@ -102,35 +109,66 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.grey,
-                    blurStyle: BlurStyle.outer,
-                    blurRadius: 2,
-                  )
-                ],
+            GestureDetector(
+              onTap: () {
+		      Navigator.of(context).pushNamed("/explore");
+	      },
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.grey,
+                      blurStyle: BlurStyle.outer,
+                      blurRadius: 2,
+                    )
+                  ],
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Explore", style: TextStyle(fontSize: 34)),
+                      Icon(Icons.keyboard_double_arrow_right, size: 34)
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(
               height: 10,
             ),
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.grey,
-                    blurStyle: BlurStyle.outer,
-                    blurRadius: 2,
-                  )
-                ],
+            GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(getErrorSnackBar("Coming Soon!"));
+              },
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.grey,
+                      blurStyle: BlurStyle.outer,
+                      blurRadius: 2,
+                    )
+                  ],
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Invites", style: TextStyle(fontSize: 34)),
+                      Icon(Icons.keyboard_double_arrow_right, size: 34)
+                    ],
+                  ),
+                ),
               ),
             ),
           ],

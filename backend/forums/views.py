@@ -32,6 +32,13 @@ class DiscussionTopicViewSet(
         else:
             return DiscussionTopic.objects.all()
 
+    def list(self, request):
+        queryset = self.get_queryset()
+
+        data = self.get_serializer(queryset, many=True).data
+
+        return Response({"data": data})
+
     def create(self, request):
         data = request.data
 
@@ -53,12 +60,17 @@ class DiscussionTopicViewSet(
 
         serialized_data = self.get_serializer(joined_topics, many=True)
 
-        return Response({"data" : serialized_data.data})
+        return Response({"data": serialized_data.data})
 
     @action(methods=["POST"], detail=True, url_name="join", url_path="join")
     def join(self, request, pk):
         user_profile = request.user.userprofile
-        topic = DiscussionTopic.objects.get(id=pk)
+        try:
+            topic = DiscussionTopic.objects.get(id=pk)
+        except DiscussionTopic.DoesNotExist:
+            return Response(
+                {"detail": "No such topic!"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         if topic.members.filter(id=user_profile.id).exists():
             return Response(
@@ -68,6 +80,28 @@ class DiscussionTopicViewSet(
         with transaction.atomic():
             TopicMembership.objects.create(user=user_profile, topic=topic, role="MEM")
         return Response({"detail": "Successfully Joined!"}, status=status.HTTP_200_OK)
+
+    @action(methods=["GET"], detail=True, url_name="threads", url_path="threads")
+    def threads(self, request, pk):
+        user = request.user.userprofile
+        try:
+            topic = DiscussionTopic.objects.get(id=pk)
+        except DiscussionTopic.DoesNotExist:
+            return Response(
+                {"detail": "No such topic!"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        threads = topic.threads.all()
+        thread_data = DiscussionThreadSerializer(threads, many=True).data
+        topic_data = self.get_serializer(topic).data
+        try:
+            membership = TopicMembership.objects.get(user=user, topic=topic)
+            user_status = membership.role
+        except TopicMembership.DoesNotExist:
+            user_status = "NAN"
+
+        return Response(
+            {"user_status": user_status, "topic": topic_data, "threads": thread_data}
+        )
 
     @action(methods=["POST"], detail=True, url_name="leave", url_path="leave")
     def leave(self, request, pk):
@@ -197,45 +231,26 @@ class DiscussionTopicModerationViewSet(viewsets.GenericViewSet):
 
 class DiscussionThreadView(
     viewsets.GenericViewSet,
-    viewsets.mixins.ListModelMixin,
     viewsets.mixins.CreateModelMixin,
 ):
 
     permission_classes = [IsAuthenticated, HasUserProfile]
     serializer_class = DiscussionThreadSerializer
+    queryset = DiscussionThread.objects.all()
 
-    def get_queryset(self):
-        if self.action == "list":
-            if "topic_id" in self.request.data.keys():
-                topic_id = self.request.data.get("topic_id")
-                return DiscussionThread.objects.filter(topic__id=topic_id)
-            else:
-                raise ParseError
-        return DiscussionThread.objects.all()
-
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         data = request.data
         user = request.user.username
-        
-        if (data["topic"] not in request.user.userprofile.joined_topics.values_list("id", flat=True)):
-            return Response({"detail" : "You haven't joined the topic!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if data["topic"] not in request.user.userprofile.joined_topics.values_list(
+            "id", flat=True
+        ):
+            return Response(
+                {"detail": "You haven't joined the topic!"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         data["created_by"] = user
         created_thread = self.get_serializer(data=data)
         created_thread.is_valid(raise_exception=True)
         created_thread.save()
         return Response(created_thread.data)
-
-    def list(self, request):
-        qs = self.get_queryset()
-
-        thread_data = self.get_serializer(qs, many=True).data
-
-        try:
-            membership = TopicMembership.objects.get(
-                topic__id=request.data["topic_id"], user=request.user.userprofile
-            )
-            user_state = membership.role
-        except TopicMembership.DoesNotExist:
-            user_state = "NA"
-
-        return Response({"user_state": user_state, "thread_data": thread_data})

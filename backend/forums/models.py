@@ -46,7 +46,7 @@ class DiscussionTopic(models.Model):
 class DiscussionThread(models.Model):
     title = models.CharField(max_length=100)
     topic = models.ForeignKey(
-        DiscussionTopic, on_delete=models.RESTRICT, related_name="theads"
+        DiscussionTopic, on_delete=models.RESTRICT, related_name="threads"
     )
     created_by = models.ForeignKey(
         "users.UserProfile",

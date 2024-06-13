@@ -3,7 +3,7 @@ class TopicModel {
   final String topicName;
   final String topicDescription;
   final String createdAt;
-  final int owner;
+  final String owner;
 
   const TopicModel(
       {required this.topicId,
