@@ -42,6 +42,8 @@ class AuthViewSet(viewsets.GenericViewSet):
                 },
                 status=status.HTTP_200_OK,
             )
+        else:
+            return Response({"message" : "Invalid Username/Password!"}, status=status.HTTP_403_FORBIDDEN);
 
 class UserProfileViewSet(viewsets.GenericViewSet, viewsets.mixins.RetrieveModelMixin, viewsets.mixins.UpdateModelMixin, viewsets.mixins.CreateModelMixin):
     serializer_class = UserProfileSerializer

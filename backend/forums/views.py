@@ -53,7 +53,7 @@ class DiscussionTopicViewSet(
 
         serialized_data = self.get_serializer(joined_topics, many=True)
 
-        return Response(serialized_data.data)
+        return Response({"data" : serialized_data.data})
 
     @action(methods=["POST"], detail=True, url_name="join", url_path="join")
     def join(self, request, pk):
