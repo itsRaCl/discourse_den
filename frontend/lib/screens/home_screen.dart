@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: FutureBuilder(
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
-                                ConnectionState.none) {
+                                ConnectionState.none || snapshot.hasData == false) {
                               return const Center(
                                   child: CircularProgressIndicator());
                             } else {
